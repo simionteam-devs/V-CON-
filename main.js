@@ -1,3 +1,5 @@
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import './style.css';
@@ -165,3 +167,53 @@ $('#convert').addEventListener('click', async () => {
     try { await ffmpeg?.deleteFile(inputName); await ffmpeg?.deleteFile(outputName); } catch {}
   }
 });
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(String(reader.result).split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+$('#download').addEventListener('click', async (event) => {
+  event.preventDefault();
+
+  if (!outputUrl) return;
+
+  const button = $('#download');
+  button.style.pointerEvents = 'none';
+
+  try {
+    const filename = button.download || 'vcon-output.mp4';
+    const blob = await (await fetch(outputUrl)).blob();
+    const base64 = await blobToBase64(blob);
+
+    const saved = await Filesystem.writeFile({
+      path: filename,
+      data: base64,
+      directory: Directory.Documents,
+      recursive: true
+    });
+
+    $('#message').textContent =
+      `Saved successfully: ${filename}`;
+
+    await Share.share({
+      title: filename,
+      text: 'Converted using V-CON',
+      url: saved.uri,
+      dialogTitle: 'Save or share your video'
+    });
+
+  } catch (err) {
+    $('#message').textContent =
+      'Save failed: ' + (err?.message || String(err));
+  } finally {
+    button.style.pointerEvents = '';
+  }
+});
+
