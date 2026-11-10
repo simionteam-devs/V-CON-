@@ -94,7 +94,7 @@ function escapeHtml(s) {
 async function loadEngine() {
   if (loaded) return;
   $('#status').textContent = 'Loading conversion engine…';
-  const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+  const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
   ffmpeg = new FFmpeg();
   ffmpeg.on('progress', ({ progress }) => {
     const p = Math.max(0, Math.min(99, Math.round(progress * 100)));
@@ -158,7 +158,8 @@ $('#convert').addEventListener('click', async () => {
   } catch (err) {
     console.error(err);
     $('#status').textContent = 'Conversion failed';
-    $('#message').textContent = 'Could not convert this file. Try MP4 output, a shorter clip, or a lower resolution. Your phone may not have enough memory for this video.';
+    $('#message').textContent =
+  'Conversion failed: ' + (err?.message || String(err));
   } finally {
     button.disabled = false;
     try { await ffmpeg?.deleteFile(inputName); await ffmpeg?.deleteFile(outputName); } catch {}
